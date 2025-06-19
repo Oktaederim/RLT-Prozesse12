@@ -367,51 +367,40 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    // --- INITIALIZATION: Radically simplified and explicit event listeners ---
     function addEventListeners() {
-        // --- Buttons ---
         dom.resetBtn.addEventListener('click', resetToDefaults);
         dom.resetSlidersBtn.addEventListener('click', resetSlidersToRef);
         dom.setReferenceBtn.addEventListener('click', handleSetReference);
 
-        // --- Simple Inputs ---
-        const simpleInputs = [
-            dom.tempAussen, dom.rhAussen, dom.druck, dom.preisWaerme, dom.preisStrom,
-            dom.preisKaelte, dom.xZuluft, dom.tempHeizVorlauf, dom.tempHeizRuecklauf, 
-            dom.tempKuehlVorlauf, dom.tempKuehlRuecklauf, dom.sfp, dom.stundenHeizen, dom.stundenKuehlen
-        ];
-        simpleInputs.forEach(input => input.addEventListener('input', () => { enforceLimits(input); calculateAll(); }));
-        
-        // --- Toggles and Selects ---
-        const toggles = [dom.kuehlerAktiv, dom.feuchteSollTyp, dom.fanCostActive];
-        toggles.forEach(toggle => toggle.addEventListener('change', () => { handleKuehlerToggle(); calculateAll(); }));
-        dom.kuehlmodusInputs.forEach(radio => radio.addEventListener('change', () => { handleKuehlerToggle(); calculateAll(); }));
-        
-        // --- Linked Inputs (Hours/Days) ---
-        dom.betriebsstundenGesamt.addEventListener('input', (e) => { enforceLimits(e.target); updateBetriebszeit(e.target.id); calculateAll(); });
-        dom.betriebstageGesamt.addEventListener('input', (e) => { enforceLimits(e.target); updateBetriebszeit(e.target.id); calculateAll(); });
+        const allInputs = document.querySelectorAll('input, select');
+        allInputs.forEach(el => {
+            const isButton = el.tagName === 'BUTTON';
+            if (isButton) return;
 
-        // --- Synced Inputs (Number boxes to Sliders) ---
-        dom.volumenstrom.addEventListener('input', () => { enforceLimits(dom.volumenstrom); syncAllSlidersToInputs(); calculateAll(); });
-        dom.tempZuluft.addEventListener('input', () => { enforceLimits(dom.tempZuluft); syncAllSlidersToInputs(); calculateAll(); });
-        dom.rhZuluft.addEventListener('input', () => { enforceLimits(dom.rhZuluft); syncAllSlidersToInputs(); calculateAll(); });
-        
-        // --- Synced Inputs (Sliders to Number boxes) ---
-        dom.volumenstromSlider.addEventListener('input', () => {
-            dom.volumenstrom.value = dom.volumenstromSlider.value;
-            dom.volumenstromLabel.textContent = dom.volumenstromSlider.value;
-            calculateAll();
-        });
-        dom.tempZuluftSlider.addEventListener('input', () => {
-            const value = parseFloat(dom.tempZuluftSlider.value).toFixed(1);
-            dom.tempZuluft.value = value;
-            dom.tempZuluftLabel.textContent = value;
-            calculateAll();
-        });
-        dom.rhZuluftSlider.addEventListener('input', () => {
-            const value = parseFloat(dom.rhZuluftSlider.value).toFixed(1);
-            dom.rhZuluft.value = value;
-            dom.rhZuluftLabel.textContent = value;
-            calculateAll();
+            const eventType = (el.tagName === 'SELECT' || el.type === 'checkbox' || el.type === 'radio') ? 'change' : 'input';
+            el.addEventListener(eventType, () => {
+                if (el.type === 'number') enforceLimits(el);
+                
+                if (el.type === 'range') {
+                    const inputId = el.id.replace('Slider', '');
+                    const isFloat = inputId !== 'volumenstrom';
+                    const value = isFloat ? parseFloat(el.value).toFixed(1) : el.value;
+                    dom[inputId].value = value;
+                    dom[inputId+'Label'].textContent = value;
+                } else if (dom[el.id + 'Slider']) {
+                    syncAllSlidersToInputs();
+                }
+                
+                if (el.id === 'betriebsstundenGesamt' || el.id === 'betriebstageGesamt') {
+                    updateBetriebszeit(el.id);
+                }
+                
+                if (el.id === 'kuehlerAktiv' || el.name === 'kuehlmodus' || el.id === 'feuchteSollTyp') {
+                    handleKuehlerToggle();
+                }
+                calculateAll();
+            });
         });
     }
 
