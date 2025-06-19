@@ -366,67 +366,37 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    // --- INITIALIZATION ---
     function addEventListeners() {
-        // --- Buttons ---
         dom.resetBtn.addEventListener('click', resetToDefaults);
         dom.resetSlidersBtn.addEventListener('click', resetSlidersToRef);
         dom.setReferenceBtn.addEventListener('click', handleSetReference);
-
-        // --- All regular inputs and selects ---
-        const simpleInputs = [
-            dom.tempAussen, dom.rhAussen, dom.druck, dom.preisWaerme, dom.preisStrom,
-            dom.preisKaelte, dom.xZuluft, dom.tempHeizVorlauf, dom.tempHeizRuecklauf, 
-            dom.tempKuehlVorlauf, dom.tempKuehlRuecklauf, dom.sfp, dom.stundenHeizen, dom.stundenKuehlen
-        ];
-        simpleInputs.forEach(input => {
-            input.addEventListener('input', () => {
-                enforceLimits(input);
-                calculateAll();
-            });
-        });
         
-        // --- Toggles and Selects that affect UI ---
-        const uiControls = [dom.kuehlerAktiv, dom.feuchteSollTyp, dom.fanCostActive];
-        uiControls.forEach(control => control.addEventListener('change', () => {
-            handleKuehlerToggle();
-            calculateAll();
-        }));
-        dom.kuehlmodusInputs.forEach(radio => radio.addEventListener('change', () => {
-            handleKuehlerToggle();
-            calculateAll();
-        }));
+        allInteractiveElements.forEach(el => {
+            const isButton = el.tagName === 'BUTTON';
+            if (isButton) return;
 
-        // --- Linked Inputs (Hours/Days) ---
-        dom.betriebsstundenGesamt.addEventListener('input', (e) => {
-            enforceLimits(e.target);
-            updateBetriebszeit(e.target.id);
-            calculateAll();
-        });
-        dom.betriebstageGesamt.addEventListener('input', (e) => {
-            enforceLimits(e.target);
-            updateBetriebszeit(e.target.id);
-            calculateAll();
-        });
+            const eventType = (el.tagName === 'SELECT' || el.type === 'checkbox' || el.type === 'radio') ? 'change' : 'input';
+            el.addEventListener(eventType, () => {
+                if (el.type === 'number') enforceLimits(el);
+                if (el.id.includes('Slider')) {
+                    const inputId = el.id.replace('Slider', '');
+                    const isFloat = inputId !== 'volumenstrom';
+                    const value = isFloat ? parseFloat(el.value).toFixed(1) : el.value;
+                    dom[inputId].value = value;
+                    dom[inputId+'Label'].textContent = value;
+                } else if (dom[el.id + 'Slider']) {
+                    syncAllSlidersToInputs();
+                }
+                
+                if (el.id === 'betriebsstundenGesamt' || el.id === 'betriebstageGesamt') {
+                    updateBetriebszeit(el.id);
+                }
+                
+                if (el.id === 'kuehlerAktiv' || el.name === 'kuehlmodus' || el.id === 'feuchteSollTyp') {
+                    handleKuehlerToggle();
+                }
 
-        // --- Synced Inputs (Number boxes) ---
-        const syncedNumberInputs = [dom.volumenstrom, dom.tempZuluft, dom.rhZuluft];
-        syncedNumberInputs.forEach(input => {
-            input.addEventListener('input', () => {
-                enforceLimits(input);
-                syncAllSlidersToInputs();
-                calculateAll();
-            });
-        });
-        
-        // --- Synced Inputs (Sliders) ---
-        const sliders = [dom.volumenstromSlider, dom.tempZuluftSlider, dom.rhZuluftSlider];
-        sliders.forEach(slider => {
-            slider.addEventListener('input', () => {
-                const inputId = slider.id.replace('Slider', '');
-                const isFloat = inputId !== 'volumenstrom';
-                const value = isFloat ? parseFloat(slider.value).toFixed(1) : slider.value;
-                dom[inputId].value = value;
-                dom[inputId+'Label'].textContent = value;
                 calculateAll();
             });
         });
