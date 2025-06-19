@@ -366,68 +366,36 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     }
-    
-    // --- INITIALIZATION: Radically simplified and explicit event listeners ---
+
     function addEventListeners() {
         // --- Buttons ---
         dom.resetBtn.addEventListener('click', resetToDefaults);
         dom.resetSlidersBtn.addEventListener('click', resetSlidersToRef);
         dom.setReferenceBtn.addEventListener('click', handleSetReference);
 
-        // --- All regular inputs and selects ---
+        // --- Simple Inputs ---
         const simpleInputs = [
             dom.tempAussen, dom.rhAussen, dom.druck, dom.preisWaerme, dom.preisStrom,
             dom.preisKaelte, dom.xZuluft, dom.tempHeizVorlauf, dom.tempHeizRuecklauf, 
             dom.tempKuehlVorlauf, dom.tempKuehlRuecklauf, dom.sfp, dom.stundenHeizen, dom.stundenKuehlen
         ];
-        simpleInputs.forEach(input => {
-            input.addEventListener('input', () => {
-                enforceLimits(input);
-                calculateAll();
-            });
-        });
+        simpleInputs.forEach(input => input.addEventListener('input', () => { enforceLimits(input); calculateAll(); }));
         
-        // --- Toggles and Selects that affect UI ---
-        const uiControls = [dom.kuehlerAktiv, dom.feuchteSollTyp, dom.fanCostActive];
-        uiControls.forEach(control => control.addEventListener('change', () => {
-            handleKuehlerToggle();
-            calculateAll();
-        }));
-        dom.kuehlmodusInputs.forEach(radio => radio.addEventListener('change', () => {
-            handleKuehlerToggle();
-            calculateAll();
-        }));
+        // --- Toggles and Selects ---
+        const toggles = [dom.kuehlerAktiv, dom.feuchteSollTyp, dom.fanCostActive];
+        toggles.forEach(toggle => toggle.addEventListener('change', () => { handleKuehlerToggle(); calculateAll(); }));
+        dom.kuehlmodusInputs.forEach(radio => radio.addEventListener('change', () => { handleKuehlerToggle(); calculateAll(); }));
         
         // --- Linked Inputs (Hours/Days) ---
-        dom.betriebsstundenGesamt.addEventListener('input', (e) => {
-            enforceLimits(e.target);
-            updateBetriebszeit(e.target.id);
-            calculateAll();
-        });
-        dom.betriebstageGesamt.addEventListener('input', (e) => {
-            enforceLimits(e.target);
-            updateBetriebszeit(e.target.id);
-            calculateAll();
-        });
+        dom.betriebsstundenGesamt.addEventListener('input', (e) => { enforceLimits(e.target); updateBetriebszeit(e.target.id); calculateAll(); });
+        dom.betriebstageGesamt.addEventListener('input', (e) => { enforceLimits(e.target); updateBetriebszeit(e.target.id); calculateAll(); });
 
-        // --- Synced Inputs (Number boxes) ---
-        dom.volumenstrom.addEventListener('input', () => {
-            enforceLimits(dom.volumenstrom);
-            syncAllSlidersToInputs();
-            calculateAll();
-        });
-        dom.tempZuluft.addEventListener('input', () => {
-            enforceLimits(dom.tempZuluft);
-            syncAllSlidersToInputs();
-            calculateAll();
-        });
-        dom.rhZuluft.addEventListener('input', () => {
-            enforceLimits(dom.rhZuluft);
-            syncAllSlidersToInputs();
-            calculateAll();
-        });
+        // --- Synced Inputs (Number boxes to Sliders) ---
+        dom.volumenstrom.addEventListener('input', () => { enforceLimits(dom.volumenstrom); syncAllSlidersToInputs(); calculateAll(); });
+        dom.tempZuluft.addEventListener('input', () => { enforceLimits(dom.tempZuluft); syncAllSlidersToInputs(); calculateAll(); });
+        dom.rhZuluft.addEventListener('input', () => { enforceLimits(dom.rhZuluft); syncAllSlidersToInputs(); calculateAll(); });
         
-        // --- Synced Inputs (Sliders) ---
+        // --- Synced Inputs (Sliders to Number boxes) ---
         dom.volumenstromSlider.addEventListener('input', () => {
             dom.volumenstrom.value = dom.volumenstromSlider.value;
             dom.volumenstromLabel.textContent = dom.volumenstromSlider.value;
